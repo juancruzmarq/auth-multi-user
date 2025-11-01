@@ -6,6 +6,15 @@ Actualmente implementa un flujo seguro y escalable para manejar múltiples usuar
 
 ---
 
+##  Indice
+- [🚀 Tecnologías principales](#-tecnologías-principales)
+- [🔄 Flujo actual de autenticación](#-flujo-actual-de-autenticación)
+- [✉️ Sistema de Emails (Outbox Pattern)](#-sistema-de-emails-outbox-pattern)
+- [🔒 Seguridad](#-seguridad)
+- [⚙️ Variables de entorno (.env)](#️-variables-de-entorno-env)
+- [🧩 Endpoints principales](#-endpoints-principales)
+- [📥 Instalación y ejecución](#-instalación-y-ejecución)
+
 ## 🚀 Tecnologías principales
 
 - **NestJS** — (Node.js framework) 
@@ -226,6 +235,6 @@ Requisitos previos:
 ## 🧑‍💻 Autor
 
 **Juan Cruz Márquez**  
-Full Stack / Backend Developer — [GitHub](https://github.com/juancruzmarq)
+Full Stack / Backend Developer — [GitHub](https://github.com/juancruzmarq) - [LinkedIn](https://www.linkedin.com/in/juancruzmarquez/) - [Email](mailto:juancruzmarquez@example.com)
 
 ---
