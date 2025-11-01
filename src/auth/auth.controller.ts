@@ -5,7 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Query,
   Req,
   Res,
   UseGuards,
@@ -34,19 +33,29 @@ export class AuthController {
     @Req() req: any,
     @Res({ passthrough: true }) res: any,
   ) {
-    return this.auth.login(dto, req, res);
+    return await this.auth.login(dto, req, res);
   }
 
-  @Get('verify-email')
-  async verifyEmail(@Query('token') q: VerifyEmailDto) {
-    return this.auth.verifyEmail(q.token);
+  @Post('verify-email')
+  async verifyEmailPost(@Body() dto: VerifyEmailDto) {
+    return await this.auth.verifyEmail(dto.token);
   }
 
- @Post('verify-email')
-    async verifyEmailPost(@Body() dto: VerifyEmailDto) {
-    return this.auth.verifyEmail(dto.token);
-    }
-    
+  @Post('reset-password-request')
+  async resetPasswordRequest(
+    @Body('email') email: string,
+  ): Promise<{ message: string }> {
+    return await this.auth.resetPasswordRequest(email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(
+    @Body('token') token: string,
+    @Body('password') newPassword: string,
+  ): Promise<{ message: string }> {
+    return await this.auth.resetPassword(token, newPassword);
+  }
+
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
   async refresh(@Req() req: any, @Res({ passthrough: true }) res: any) {

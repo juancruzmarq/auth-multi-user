@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,7 +11,7 @@ import {
   hashPassword,
   verifyPassword,
   hashTokenStable,
-} from '../common/crypto.util';
+} from '../common/utils/crypto.util';
 import { JwtService } from '@nestjs/jwt';
 import { addDays } from 'date-fns';
 import { randomBytes } from 'crypto';
@@ -18,9 +19,11 @@ import { UserService } from '../user/user.service';
 import { MailStatus, UserStatus } from 'generated/prisma/enums';
 import { MailService } from 'src/mail/mail.service';
 import { createHash } from 'crypto';
+import { errorHandler } from 'src/common/utils/error.handler';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     private prisma: PrismaService,
     private users: UserService,
@@ -144,8 +147,8 @@ export class AuthService {
       user: { id_user: user.id_user, email: user.email, name: user.name },
     };
   }
-  
- async verifyEmail(plainToken: string) {
+
+  async verifyEmail(plainToken: string) {
     const tokenHash = createHash('sha256').update(plainToken).digest('hex');
 
     // Buscar token por hash (asegurate que token_hash sea UNIQUE)
@@ -179,12 +182,13 @@ export class AuthService {
           id_user: vt.id_user,
           to: u!.email,
           subject: '¡Bienvenido!',
-          type: 'WELCOME_EMAIL' as any,  // o MailType.WELCOME_EMAIL si lo tenés
-          template: 'welcome', // si usás templates
+          type: 'WELCOME_EMAIL' as any, // o MailType.WELCOME_EMAIL si lo tenés
+          template: 'welcome-email', // si usás templates
           payload: {
             name: u?.name ?? '',
             appName: process.env.APP_NAME,
             year: new Date().getFullYear(),
+            appUrl: process.env.APP_FRONTEND_URL,
           },
           status: MailStatus.PENDING,
         },
@@ -192,6 +196,51 @@ export class AuthService {
     });
 
     return { message: 'Email verified successfully' };
+  }
+
+  // Reset password request
+  async resetPasswordRequest(email: string): Promise<{ message: string }> {
+    const user = await this.users.findByEmail(email);
+    if (!user) {
+      // No revelar si el email existe o no
+      return {
+        message: 'If that email is registered, a reset link has been sent.',
+      };
+    }
+
+    await this.mailService.createPasswordResetEmail(user.id_user, user.email);
+
+    return {
+      message: 'If that email is registered, a reset link has been sent.',
+    };
+  }
+
+  // Reset password
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    const vt = await this.prisma.verificationToken.findUnique({
+      where: { token_hash: tokenHash },
+    });
+    if (!vt || vt.expires_at < new Date() || vt.purpose !== 'PASSWORD_RESET') {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    const newHashedPassword = await hashPassword(newPassword);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.credential.updateMany({
+        where: { id_user: vt.id_user },
+        data: { password_hash: newHashedPassword, algo: 'bcrypt' },
+      });
+
+      await tx.verificationToken.delete({ where: { id: vt.id } });
+    });
+    this.logger.log(`Password reset for user ID: ${vt.id_user}`);
+    return { message: 'Password has been reset successfully' };
   }
 
   // REFRESH con rotación y reuse detection
@@ -204,8 +253,8 @@ export class AuthService {
       payload = this.jwt.verify(token, {
         secret: process.env.JWT_REFRESH_SECRET!,
       });
-    } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+    } catch (error) {
+      throw errorHandler(this.logger, error, 'Invalid refresh token');
     }
 
     const hashed = hashTokenStable(token, this.pepper);

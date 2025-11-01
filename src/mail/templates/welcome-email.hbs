@@ -1,0 +1,88 @@
+<html lang='es'>
+  <head>
+    <meta charset='UTF-8' />
+    <title>¡Bienvenido a {{appName}}!</title>
+    <style>
+      body {
+        background-color: #f7f8fa;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        color: #333;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 520px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+      .header {
+        background: linear-gradient(135deg, #4e54c8, #8f94fb);
+        color: white;
+        text-align: center;
+        padding: 30px 20px;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 22px;
+      }
+      .content {
+        padding: 30px 30px 20px;
+        text-align: center;
+      }
+      .content p {
+        font-size: 16px;
+        line-height: 1.5;
+      }
+      .btn {
+        display: inline-block;
+        margin-top: 25px;
+        background: #4e54c8;
+        color: white;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+      }
+      .btn:hover {
+        background: #4348b5;
+      }
+      .footer {
+        font-size: 12px;
+        color: #888;
+        text-align: center;
+        padding: 20px 10px 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <div class='header'>
+        <h1>¡Bienvenido{{#if name}}, {{name}}{{/if}}!</h1>
+      </div>
+      <div class='content'>
+        <p>Tu cuenta ha sido verificada con éxito y ya podés acceder a todas las
+          funciones de
+          <strong>{{appName}}</strong>.</p>
+        <p>Nos alegra tenerte con nosotros 🚀</p>
+
+        <a href='{{appUrl}}' class='btn' target='_blank'>Ir a {{appName}}</a>
+
+        <p style='margin-top:25px;font-size:13px;color:#777'>
+          Si el botón no funciona, copiá y pegá este enlace en tu navegador:<br
+          />
+          <a
+            href='{{appUrl}}'
+            style='color:#4e54c8;word-break:break-all;'
+          >{{appUrl}}</a>
+        </p>
+      </div>
+      <div class='footer'>
+        <p>Gracias por unirte a nuestra comunidad.</p>
+        <p>© {{year}} {{appName}} – Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </body>
+</html>
