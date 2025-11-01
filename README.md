@@ -1,6 +1,6 @@
-# 🔐 Auth Multi-User — Sistema de Autenticación y Gestión de Usuarios
+# 🔐 Autthy — Sistema de Autenticación y Gestión de Usuarios
 
-**Auth Multi-User** es una aplicación backend construida con **NestJS**, **Prisma**, **PostgreSQL** y **Node.js**, que provee un sistema completo de autenticación, verificación por email, gestión de sesiones y recuperación de contraseñas.
+**Autthy** es una template de aplicación backend construida con **NestJS**, **Prisma**, **PostgreSQL** y **Node.js**, que provee un sistema completo de autenticación, verificación por email, gestión de sesiones y recuperación de contraseñas.
 
 Actualmente implementa un flujo seguro y escalable para manejar múltiples usuarios, sesiones concurrentes, tokens JWT, y un sistema de envío de mails con outbox y plantillas en Handlebars.
 
@@ -148,7 +148,7 @@ A continuación, se detalla el significado de cada variable y su función.
 | Variable | Descripción | Ejemplo |
 |-----------|-------------|----------|
 | `APP_FRONTEND_URL` | URL del frontend para generar enlaces en mails | `http://localhost:5173` |
-| `APP_NAME` | Nombre de la aplicación (usado en templates) | `Auth Multi-User` |
+| `APP_NAME` | Nombre de la aplicación (usado en templates) | `Autthy` |
 | `APP_PORT` | Puerto del servidor NestJS | `3000` |
 | `ENVIRONMENT` | Entorno actual (`development` o `production`) | `development` |
 
@@ -165,7 +165,7 @@ A continuación, se detalla el significado de cada variable y su función.
 
 > ⚠️ Asegurate de que `MAIL_FROM` sea una dirección válida según el proveedor SMTP.  
 > Ejemplo para MailerSend:  
-> `MAIL_FROM="Auth Multi-User <no-reply@tudominio.com>"`
+> `MAIL_FROM="Autthy <no-reply@tudominio.com>"`
 
 ---
 
@@ -214,7 +214,7 @@ Requisitos previos:
    ```
 2. Instala las dependencias:
   ```bash
-   cd auth-multi-user
+   cd autthy
    pnpm install
    ```
 3. Configura la base de datos:
