@@ -1,6 +1,7 @@
-# 🔐 Autthy — Sistema de Autenticación y Gestión de Usuarios
 
-**Autthy** es una template de aplicación backend construida con **NestJS**, **Prisma**, **PostgreSQL** y **Node.js**, que provee un sistema completo de autenticación, verificación por email, gestión de sesiones y recuperación de contraseñas.
+<p>
+
+Autthy es una template de aplicación backend construida con **NestJS**, **Prisma**, **PostgreSQL** y **Node.js**, que provee un sistema completo de autenticación, verificación por email, gestión de sesiones y recuperación de contraseñas.
 
 Actualmente implementa un flujo seguro y escalable para manejar múltiples usuarios, sesiones concurrentes, tokens JWT, y un sistema de envío de mails con outbox y plantillas en Handlebars.
 
