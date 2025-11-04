@@ -1,5 +1,7 @@
 
-<p>
+<p align="center">
+   <img src="/public/autthy.png" alt="Autthy Logo" width="200"/>
+</p>
 
 Autthy es una template de aplicación backend construida con **NestJS**, **Prisma**, **PostgreSQL** y **Node.js**, que provee un sistema completo de autenticación, verificación por email, gestión de sesiones y recuperación de contraseñas.
 
