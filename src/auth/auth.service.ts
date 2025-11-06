@@ -16,10 +16,20 @@ import { JwtService } from '@nestjs/jwt';
 import { addDays } from 'date-fns';
 import { randomBytes } from 'crypto';
 import { UserService } from '../user/user.service';
-import { MailStatus, UserStatus } from 'generated/prisma/enums';
+import { AuthProvider, MailStatus, UserStatus } from 'generated/prisma/enums';
 import { MailService } from 'src/mail/mail.service';
 import { createHash } from 'crypto';
 import { errorHandler } from 'src/common/utils/error.handler';
+
+type GooglePayload = {
+  provider: 'GOOGLE';
+  id_provider: string;
+  email: string | null;
+  email_verified: boolean;
+  name: string;
+  photo_url: string | null;
+  oauth?: { accessToken: string; refreshToken: string };
+};
 
 @Injectable()
 export class AuthService {
@@ -75,6 +85,101 @@ export class AuthService {
       domain: process.env.COOKIE_DOMAIN || undefined,
       path: '/auth', // Mismo path que al setear
     });
+  }
+
+  // GOOGLE
+
+  async oauthLogin(
+    provider: 'GOOGLE',
+    payload: GooglePayload,
+    req: any,
+    res: any,
+  ) {
+    // 1) ¿Existe Account por provider/id_provider?
+    let account = await this.prisma.account.findUnique({
+      where: {
+        provider_id_provider: {
+          provider: AuthProvider.GOOGLE,
+          id_provider: payload.id_provider,
+        },
+      },
+      include: { user: true },
+    });
+
+    let user = account?.user ?? null;
+
+    // 2) Si no hay Account:
+    if (!account) {
+      // Buscar por email para “linkear” si ya se registró por email/password
+      if (payload.email) {
+        user = await this.users.findByEmail(payload.email);
+      }
+
+      // Crear user si no existe
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            email: payload.email ?? `${payload.id_provider}@google.local`, // fallback si Google no da email (raro)
+            name: payload.name,
+            photo_url: payload.photo_url ?? undefined,
+            status: UserStatus.ACTIVE,
+            email_verified: !!payload.email_verified,
+            email_verified_at: payload.email_verified ? new Date() : null,
+          },
+        });
+      } else {
+        // Si ya existía y Google verifica el email, actualizá flags
+        if (payload.email_verified && !user.email_verified) {
+          user = await this.prisma.user.update({
+            where: { id_user: user.id_user },
+            data: {
+              email_verified: true,
+              email_verified_at: new Date(),
+              status: UserStatus.ACTIVE,
+            },
+          });
+        }
+      }
+
+      // Crear/adjuntar Account
+      account = await this.prisma.account.create({
+        data: {
+          id_user: user.id_user,
+          provider: AuthProvider.GOOGLE,
+          id_provider: payload.id_provider,
+          email: payload.email ?? undefined,
+          access_token: payload.oauth?.accessToken ?? undefined,
+          refresh_token: payload.oauth?.refreshToken ?? undefined,
+        },
+        include: { user: true },
+      });
+    }
+
+    // 3) Emitir tokens y crear sesión (igual que tu login())
+    const access = this.signAccess(user!.id_user, user!.email);
+    const refresh = this.signRefresh(user!.id_user);
+
+    await this.prisma.session.create({
+      data: {
+        id_user: user!.id_user,
+        refresh_token_hash: hashTokenStable(refresh, this.pepper),
+        user_agent: req.headers['user-agent'],
+        ip: (req.ip || '').toString(),
+        expires_at: addDays(new Date(), this.refreshTTLDays),
+      },
+    });
+
+    this.setRefreshCookie(res, refresh);
+
+    return {
+      access_token: access,
+      user: {
+        id_user: user!.id_user,
+        email: user!.email,
+        name: user!.name,
+        photo_url: user!.photo_url,
+      },
+    };
   }
 
   // SIGNUP

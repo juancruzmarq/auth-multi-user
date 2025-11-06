@@ -15,7 +15,7 @@ export class UserService {
   }
 
   async createUser(email: string, name?: string) {
-    return this.prismaService.user.create({
+    return await this.prismaService.user.create({
       data: {
         email,
         name: name,
