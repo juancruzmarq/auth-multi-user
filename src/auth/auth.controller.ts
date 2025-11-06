@@ -30,16 +30,9 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleCallback(@Req() req: any, @Res({ passthrough: true }) res: any) {
     // req.user viene del validate() de la strategy
-    const { access_token, user } = await this.auth.oauthLogin(
-      'GOOGLE',
-      req.user,
-      req,
-      res,
-    );
+    await this.auth.oauthLogin('GOOGLE', req.user, req, res);
 
-    // Podés redirigir al front con el token en fragment/param si querés
-    // return res.redirect(`${process.env.APP_FRONTEND_URL}/auth/cb#access=${access_token}`);
-    return { access_token, user };
+    return res.redirect(`${process.env.APP_FRONTEND_URL}/auth/cb`);
   }
 
   // Registro de usuario

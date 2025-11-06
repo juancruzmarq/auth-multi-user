@@ -137,6 +137,23 @@ export class MailService {
     }
   }
 
+  async createWelcomeEmail(userId: string, email: string, name: string) {
+    await this.prisma.mailOutbox.create({
+      data: {
+        id_user: userId,
+        to: email,
+        subject: '¡Bienvenido a ' + process.env.APP_NAME + '!',
+        type: MailType.WELCOME_EMAIL,
+        template: 'welcome-email',
+        payload: {
+          name: name,
+          year: new Date().getFullYear(),
+          appName: process.env.APP_NAME,
+        },
+      },
+    });
+  }
+
   private async dispatch(mail: {
     to: string;
     subject: string;

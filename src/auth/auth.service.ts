@@ -20,6 +20,8 @@ import { AuthProvider, MailStatus, UserStatus } from 'generated/prisma/enums';
 import { MailService } from 'src/mail/mail.service';
 import { createHash } from 'crypto';
 import { errorHandler } from 'src/common/utils/error.handler';
+import { Config, isProduction } from 'src/common/config';
+import { ConfigService } from '@nestjs/config';
 
 type GooglePayload = {
   provider: 'GOOGLE';
@@ -34,18 +36,35 @@ type GooglePayload = {
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  // Config
+  private accessTTLsec: number;
+  private refreshTTLDays: number;
+  private pepper: string;
+  private rtCookie: string;
+  private sameSite: string;
+  private cookieDomain: string | undefined;
+
   constructor(
     private prisma: PrismaService,
     private users: UserService,
     private jwt: JwtService,
     private mailService: MailService,
-  ) {}
-
-  // Config
-  private accessTTLsec = Number(process.env.ACCESS_TOKEN_TTL || 900);
-  private refreshTTLDays = Number(process.env.REFRESH_TOKEN_TTL_DAYS || 30);
-  private pepper = process.env.TOKEN_HASH_PEPPER || 'pepper';
-  private rtCookie = process.env.REFRESH_COOKIE_NAME || 'rt';
+    private config: ConfigService,
+  ) {
+    this.accessTTLsec = Number(
+      this.config.get<string>(Config.ACCESS_TOKEN_TTL) || 900,
+    );
+    this.refreshTTLDays = Number(
+      this.config.get<string>(Config.REFRESH_TOKEN_TTL) || 30,
+    );
+    this.pepper =
+      this.config.get<string>(Config.TOKEN_HASH_PEPPER) || 'default_pepper';
+    this.rtCookie =
+      this.config.get<string>(Config.REFRESH_COOKIE_NAME) || 'refresh_token';
+    this.sameSite = this.config.get<string>(Config.COOKIE_SAMESITE) || 'lax';
+    this.cookieDomain =
+      this.config.get<string>(Config.COOKIE_DOMAIN) || undefined;
+  }
 
   // Helpers
   // Funciones para firmar y manejar tokens y cookies
@@ -70,10 +89,10 @@ export class AuthService {
   private setRefreshCookie(res: any, token: string) {
     res.cookie(this.rtCookie, token, {
       httpOnly: true,
-      secure: process.env.COOKIE_SECURE === 'true',
-      sameSite: (process.env.COOKIE_SAMESITE as any) ?? 'lax',
-      domain: process.env.COOKIE_DOMAIN || undefined,
-      maxAge: this.refreshTTLDays * 24 * 60 * 60 * 1000,
+      secure: isProduction,
+      sameSite: this.sameSite,
+      domain: this.cookieDomain,
+      maxAge: this.refreshTTLDays * 24 * 60 * 60 * 1000, // en ms
       path: '/auth', // Se envía solo en /auth/*
     });
   }
@@ -81,8 +100,8 @@ export class AuthService {
     res.clearCookie(this.rtCookie, {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === 'true',
-      sameSite: (process.env.COOKIE_SAMESITE as any) ?? 'lax',
-      domain: process.env.COOKIE_DOMAIN || undefined,
+      sameSite: this.sameSite,
+      domain: this.cookieDomain,
       path: '/auth', // Mismo path que al setear
     });
   }
@@ -127,6 +146,14 @@ export class AuthService {
             email_verified_at: payload.email_verified ? new Date() : null,
           },
         });
+        // Enviar mail de bienvenida si el email fue verificado por Google
+        if (payload.email_verified && payload.email) {
+          await this.mailService.createWelcomeEmail(
+            user.id_user,
+            payload.email,
+            payload.name,
+          );
+        }
       } else {
         // Si ya existía y Google verifica el email, actualizá flags
         if (payload.email_verified && !user.email_verified) {

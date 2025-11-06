@@ -145,22 +145,6 @@ model VerificationToken {
   @@map("verification_token")
 }
 
-// -------------------------
-// Reset de contraseña
-// -------------------------
-model PasswordResetToken {
-  id         String   @id @default(cuid())
-  id_user    String
-  user       User     @relation(fields: [id_user], references: [id_user], onDelete: Cascade)
-
-  token_hash String   @unique              // hash del token
-  expires_at DateTime
-  created_at DateTime @default(now())
-  used_at    DateTime?
-
-  @@index([id_user, created_at])
-  @@map("password_reset_token")
-}
 
 // -------------------------
 // Auditoría de login
